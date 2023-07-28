@@ -16,13 +16,13 @@
 #include "aws_iot_version.h"
 #include "aws_iot_mqtt_client_interface.h"
 #include "aws_iot_shadow_interface.h"
-#include "aws_test_cert.h"
+#include "aws_cert.h"
 #include "blog.h"
 #include <bl_gpio.h>
 
 #define GPIO_LED_PIN 3
 
-static void testdisconnectCallbackHandler(AWS_IoT_Client* pClient, void* data) {
+static void disconnectCallbackHandler(AWS_IoT_Client* pClient, void* data) {
 	blog_info("MQTT Disconnect");
 	IoT_Error_t rc = FAILURE;
 
@@ -46,17 +46,16 @@ static void testdisconnectCallbackHandler(AWS_IoT_Client* pClient, void* data) {
 }
 
 
-static void test_iot_subscribe_callback_handler(AWS_IoT_Client* pClient, char* topicName, uint16_t topicNameLen,
+static void iot_subscribe_callback_handler(AWS_IoT_Client* pClient, char* topicName, uint16_t topicNameLen,
 									IoT_Publish_Message_Params* params, void* pData) {
 	blog_info("Subscribe callback");
 	if (*(char *)params->payload == '1') {
 		blog_info("Enabling Led");
         bl_gpio_output_set(GPIO_LED_PIN, 1);
-	} else {
-		bl_gpio_output_set(GPIO_LED_PIN, 0);
-		blog_info("Disabling Led");
+		vTaskDelay(250);
+        bl_gpio_output_set(GPIO_LED_PIN, 0);
 	}
-	// blog_info("%.*s\t%.*s", topicNameLen, topicName, (int)params->payloadLen, (char*)params->payload);
+	blog_info("%.*s\t%.*s", topicNameLen, topicName, (int)params->payloadLen, (char*)params->payload);
 }
 
 void aws_iot_control(void* arg)
@@ -67,22 +66,19 @@ void aws_iot_control(void* arg)
 	AWS_IoT_Client client;
 	IoT_Client_Init_Params mqttInitParams = iotClientInitParamsDefault;
 	IoT_Client_Connect_Params connectParams = iotClientConnectParamsDefault;
-	IoT_Publish_Message_Params paramsQOS0;
-	char testdata[100];
-	int testflag = 0;
 
 	blog_info("\nAWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
 	mqttInitParams.enableAutoReconnect = false;
-	mqttInitParams.pHostURL = TEST_MQTT_HOST;
-	mqttInitParams.port = TEST_MQTT_PORT;
-	mqttInitParams.pRootCALocation = TEST_ROOT_CA_FILENAME;
-	mqttInitParams.pDeviceCertLocation = TEST_CERTIFICATE_FILENAME;
-	mqttInitParams.pDevicePrivateKeyLocation = TEST_PRIVATE_KEY_FILENAME;
+	mqttInitParams.pHostURL = MQTT_HOST;
+	mqttInitParams.port = MQTT_PORT;
+	mqttInitParams.pRootCALocation = ROOT_CA_FILENAME;
+	mqttInitParams.pDeviceCertLocation = CERTIFICATE_FILENAME;
+	mqttInitParams.pDevicePrivateKeyLocation = PRIVATE_KEY_FILENAME;
 	mqttInitParams.mqttCommandTimeout_ms = 20000;
 	mqttInitParams.tlsHandshakeTimeout_ms = 5000;
 	mqttInitParams.isSSLHostnameVerify = true;
-	mqttInitParams.disconnectHandler = testdisconnectCallbackHandler;
+	mqttInitParams.disconnectHandler = disconnectCallbackHandler;
 	mqttInitParams.disconnectHandlerData = NULL;
 
 	rc = aws_iot_mqtt_init(&client, &mqttInitParams);
@@ -94,8 +90,8 @@ void aws_iot_control(void* arg)
 	connectParams.keepAliveIntervalInSec = 600;
 	connectParams.isCleanSession = true;
 	connectParams.MQTTVersion = MQTT_3_1_1;
-	connectParams.pClientID = TEST_MQTT_CLIENT_ID;
-	connectParams.clientIDLen = (uint16_t)strlen(TEST_MQTT_CLIENT_ID);
+	connectParams.pClientID = MQTT_CLIENT_ID;
+	connectParams.clientIDLen = (uint16_t)strlen(MQTT_CLIENT_ID);
 	connectParams.isWillMsgPresent = false;
 
 	blog_info("Connecting...");
@@ -115,10 +111,10 @@ void aws_iot_control(void* arg)
 		goto exit;
 	}
 
-	blog_info("Connect ok!!!, start Subscribing Topic=[%s]...", TEST_MYSUBTOPIC);
-	rc = aws_iot_mqtt_subscribe(&client, TEST_MYSUBTOPIC, strlen(TEST_MYSUBTOPIC), QOS1, test_iot_subscribe_callback_handler, NULL);
+	blog_info("Connect ok!!!, start Subscribing Topic=[%s]...", SUBTOPIC);
+	rc = aws_iot_mqtt_subscribe(&client, SUBTOPIC, strlen(SUBTOPIC), QOS1, iot_subscribe_callback_handler, NULL);
 	if (SUCCESS != rc) {
-		blog_error("Error subscribing : %d , topic=[%s]", rc, TEST_MYSUBTOPIC);
+		blog_error("Error subscribing : %d , topic=[%s]", rc, SUBTOPIC);
 		goto exit;
 	}
 
@@ -129,26 +125,7 @@ void aws_iot_control(void* arg)
 			// If the client is attempting to reconnect we will skip the rest of the loop.
 			continue;
 		}
-		// blog_info("-->sleep");
 		vTaskDelay(1000);
-		paramsQOS0.qos = QOS0;
-		paramsQOS0.isRetained = 0;
-		memset(testdata, 0, 100);
-		if (!testflag) {
-			testflag = 1;
-			memcpy(testdata, "Light ON", strlen("LIGHT ON"));
-		}
-		else {
-			testflag = 0;
-			memcpy(testdata, "LIGHT OFF", strlen("LIGHT OFF"));
-		}
-		paramsQOS0.payload = (void*)testdata;
-		paramsQOS0.payloadLen = strlen(testdata);
-		rc = aws_iot_mqtt_publish(&client, TEST_MYPUBTOPIC, strlen(TEST_MYPUBTOPIC), &paramsQOS0);
-		if (rc == MQTT_REQUEST_TIMEOUT_ERROR) {
-			blog_info("publish ack not received.");
-			rc = SUCCESS;
-		}
 	}
 exit:
 	blog_info("\ntest task exit ");

@@ -579,13 +579,13 @@ app-clean: $(addprefix component-,$(addsuffix -clean,$(notdir $(COMPONENT_PATHS)
 
 #burn code to bl602 board, now only support BL602 IOT-DVK-3s platform, if you want to support older bl602 board you need change parameter port to /dev/ttyUSB0 
 flash: all
-	cd $(BL60X_SDK_PATH)/tools/flash_tool && env SDK_APP_BIN=$(APP_BIN) SDK_BOARD=$(PROJECT_BOARD) SDK_NAME=$(PROJECT_NAME) SDK_MEDIA_BIN=$(APP_MEDIA_BIN) SDK_ROMFS_DIR=$(APP_ROMFS_DIR) SDK_DTS=$(PROJECT_DTS) SDK_XTAL=$(PROJECT_BOARD_XTAL) BL_FLASH_TOOL_INPUT_PATH_cfg2_bin_input=$(APP_BIN) bflb-iot-tool --chipname=BL602 --baudrate=$(SERIAL_BAUDRATE) --port=$(SERIAL_PORT) --pt=$(BL60X_SDK_PATH)/tools/flash_tool/chips/bl602/partition/partition_cfg_2M.toml --dts=$(BL60X_SDK_PATH)/tools/flash_tool/chips/bl602/device_tree/bl_factory_params_IoTKitA_40M.dts --firmware=$(APP_BIN) 
+	env SDK_APP_BIN=$(APP_BIN) SDK_BOARD=$(PROJECT_BOARD) SDK_NAME=$(PROJECT_NAME) SDK_MEDIA_BIN=$(APP_MEDIA_BIN) SDK_ROMFS_DIR=$(APP_ROMFS_DIR) SDK_DTS=$(PROJECT_DTS) SDK_XTAL=$(PROJECT_BOARD_XTAL) BL_FLASH_TOOL_INPUT_PATH_cfg2_bin_input=$(APP_BIN) bflb-iot-tool --chipname=BL602 --baudrate=$(SERIAL_BAUDRATE) --port=$(SERIAL_PORT) --pt=$(BL60X_SDK_PATH)/tools/flash_tool/chips/bl602/partition/partition_cfg_2M.toml --dts=$(BL60X_SDK_PATH)/tools/flash_tool/chips/bl602/device_tree/bl_factory_params_IoTKitA_40M.dts --firmware=$(APP_BIN) 
 
 clean: app-clean
 
 
 erase_flash: all
-	cd $(BL60X_SDK_PATH)/tools/flash_tool && env SDK_APP_BIN=$(APP_BIN) SDK_BOARD=$(PROJECT_BOARD) SDK_NAME=$(PROJECT_NAME) SDK_MEDIA_BIN=$(APP_MEDIA_BIN) SDK_ROMFS_DIR=$(APP_ROMFS_DIR) SDK_DTS=$(PROJECT_DTS) SDK_XTAL=$(PROJECT_BOARD_XTAL) BL_FLASH_TOOL_INPUT_PATH_cfg2_bin_input=$(APP_BIN) bflb-iot-tool --chipname=BL602 --baudrate=$(SERIAL_BAUDRATE) --port=$(SERIAL_PORT) --firmware=$(BL60X_SDK_PATH)/tools/flash_tool/chips/bl602/eflash_loader/eflash_loader_40m.bin --erase
+	env SDK_APP_BIN=$(APP_BIN) SDK_BOARD=$(PROJECT_BOARD) SDK_NAME=$(PROJECT_NAME) SDK_MEDIA_BIN=$(APP_MEDIA_BIN) SDK_ROMFS_DIR=$(APP_ROMFS_DIR) SDK_DTS=$(PROJECT_DTS) SDK_XTAL=$(PROJECT_BOARD_XTAL) BL_FLASH_TOOL_INPUT_PATH_cfg2_bin_input=$(APP_BIN) bflb-iot-tool --chipname=BL602 --baudrate=$(SERIAL_BAUDRATE) --port=$(SERIAL_PORT) --firmware=$(BL60X_SDK_PATH)/tools/flash_tool/chips/bl602/eflash_loader/eflash_loader_40m.bin --erase
 
 
 

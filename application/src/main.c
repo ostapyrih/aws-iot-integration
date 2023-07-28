@@ -88,7 +88,6 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
         default:
         {
             printf("[APP] [EVT] Unknown code %u, %lld\r\n", event->code, aos_now_ms());
-            /*nothing*/
         }
     }
 }
